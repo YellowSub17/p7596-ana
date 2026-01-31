@@ -12,5 +12,5 @@ module purge
 module load exfel exfel-python openmpi-no-python
 
 
-mpirun -n 8 -- python calc_run_mean.py $@
+mpirun -n 8 -- python calc_run_var.py $@
 
