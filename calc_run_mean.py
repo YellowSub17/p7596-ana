@@ -49,16 +49,16 @@ if __name__ == '__main__':
 
 
     with h5py.File(args.h5in, 'r') as h5in:
-        assert args.run == h5in['/args/run']
-        args.n_trains = h5in['/args/n-trains']
+        assert args.run == h5in['/args/run'], f'run in h5file {h5in["/args/run"]} and run in command {args.run} are not the same'
+        args.n_ana_trains = h5in['/args/n_ana_trains']
 
 
-    assert args.n_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
+    assert args.n_ana_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
 
 
     run = extra_data.open_run(proposal=PROPOSAL_NUM, run=args.run)
 
-    run_upto = run.select_trains(train_range = np.s_[:args.n_total_trains])
+    run_upto = run.select_trains(train_range = np.s_[:args.n_ana_trains])
     worker_run = list(run_upto.split_trains(parts=mpi_size))[mpi_rank]
 
     worker_sel = worker_run.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data')
@@ -69,7 +69,6 @@ if __name__ == '__main__':
     worker_sum_im = np.zeros(DET_SHAPE)
     worker_sumsq_im = np.zeros(DET_SHAPE)
 
-    worker_nframes = np.zeros( (worker_ntrains) )
 
 
     print(f'Worker {mpi_rank} handling {worker_ntrains} trains.')
@@ -79,8 +78,6 @@ if __name__ == '__main__':
     for i_train, (train_id, train_data) in enumerate(worker_sel.trains(require_all=True)):
 
         stack = extra_data.stack_detector_data(train_data, 'image.data')[:, 0,...] #pulses, ??, modules, fast scan, slow scan 
-
-        worker_nframes[i_train] = stack.shape[0]
 
         train_sum_im = stack.sum(axis=0)
         worker_sum_im += train_sum_im
@@ -97,7 +94,6 @@ if __name__ == '__main__':
     if mpi_rank ==0:
         run_sum_im = np.zeros(DET_SHAPE)
         run_sumsq_im = np.zeros(DET_SHAPE)
-
 
     else:
         run_sum_im = None
@@ -119,7 +115,6 @@ if __name__ == '__main__':
 
 
     all_worker_train_ids = mpi_comm.gather(worker_train_ids, root=0)
-    all_worker_nframes = mpi_comm.gather(worker_nframes, root=0)
 
 
 
@@ -139,6 +134,8 @@ if __name__ == '__main__':
         run_mean_im = run_sum_im/np.sum(run_nframes)
 
 
+        t1 = time.perf_counter() - t0
+        print(f'Time: {round(t1, 2)}')
 
 
         with h5py.File(args.h5out, 'w') as h5out:
@@ -149,13 +146,13 @@ if __name__ == '__main__':
             h5out['/train_ids'] = run_train_ids
             h5out['/nframes'] = run_nframes
 
+            h5out['/calc_time'] = t1
+
             # for key, value in vars(args).items():
                 # h5out[f'/args/{key}'] = value
 
 
 
-        t1 = time.perf_counter() - t0
-        print(f'Time: {round(t1, 2)}')
 
 
 
