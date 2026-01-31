@@ -131,7 +131,7 @@ if __name__ == '__main__':
 
 
         with h5py.File(args.h5out, 'w') as h5out:
-            h5out['/var_im'] = run_mean_im
+            h5out['/var_im'] = run_var_im
 
             h5out['/train_ids'] = run_train_ids
             h5out['/n_pulses'] = n_pulses
