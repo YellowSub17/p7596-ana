@@ -14,8 +14,8 @@ module load exfel exfel-python
 echo "create_run_summary_h5.py"
 echo "Date: $(date)"
 echo "slurm job id: ${SLURM_JOB_ID}"
-echo "cmd: mpirun -- python create_run_summary_h5.py $@"
+echo "cmd: mpirun -n 8 -- python create_run_summary_h5.py $@"
 
-mpirun -n 8 -- python create_run_summary_h5.py $@
+mpirun -n 8 -- python calc_run_mean.py $@
 
 echo "Date: $(date)"
