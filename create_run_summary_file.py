@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
 
 
-    with h5py.File(f'{args.h5dir}/r{args.h5name}', 'r') as f:
+    with h5py.File(f'{args.h5dir}/r{args.h5name}', 'w') as f:
 
         for key, value in vars(args).items():
             f[f'/args/{key}'] = value
