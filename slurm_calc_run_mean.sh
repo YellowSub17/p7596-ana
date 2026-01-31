@@ -9,7 +9,7 @@ source /etc/profile.d/modules.sh
 
 module purge
 
-module load exfel exfel-python
+module load exfel exfel-python openmpi-no-python
 
 echo "create_run_summary_h5.py"
 echo "Date: $(date)"
