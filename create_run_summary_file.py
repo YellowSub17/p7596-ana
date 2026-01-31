@@ -1,7 +1,7 @@
 
 
 import h5py
-from constants import *
+import cnst
 import argparse
 import extra_data
 import numpy as np
@@ -16,12 +16,10 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser("Create a run summary file.")
 
-
     parser.add_argument("run", type=int, help='Run number to summarize.')
     parser.add_argument("--h5dir", default=None, help='Directory to save h5 file.')
     parser.add_argument("--h5name", default=None, help='Name of the h5 file.')
-    parser.add_argument("--n-ana-trains", type=int, default=-1, help='Number of trains to summarize.')
-
+    parser.add_argument("--n-trains", type=int, default=-1, help='Number of trains to summarize.')
 
     args = parser.parse_args()
 
@@ -53,7 +51,6 @@ if __name__ == '__main__':
 
         f['/run/n_pulses'] = n_pulses
         f['/run/n_total_trains'] = n_total_trains
-
 
 
 
