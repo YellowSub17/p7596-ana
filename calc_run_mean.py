@@ -2,7 +2,7 @@
 
 import h5py
 import numpy as np
-import constants
+import cnst
 import argparse
 import extra_data
 import extra_geom
