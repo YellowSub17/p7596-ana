@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
     with h5py.File(args.h5in, 'r') as h5in:
         mean_im = h5in['/mean_im'][:]
-        args.n_trains = h5in['/n_trains'][:]
+        args.n_trains = h5in['/n_trains'][...]
         train_ids = h5in['/train_ids'][:]
 
 
