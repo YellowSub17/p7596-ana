@@ -50,10 +50,10 @@ if __name__ == '__main__':
 
     with h5py.File(args.h5in, 'r') as h5in:
         assert args.run == h5in['/args/run']
-        args.n_total_trains = h5in['/args/n-total-trains']
+        args.n_trains = h5in['/args/n-trains']
 
 
-    assert args.n_total_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
+    assert args.n_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
 
 
     run = extra_data.open_run(proposal=PROPOSAL_NUM, run=args.run)
