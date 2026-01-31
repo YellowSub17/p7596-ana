@@ -30,6 +30,15 @@ if __name__ == '__main__':
         args.h5name =f'r{args.run}_summary.h5'
 
 
+    run = extra_data.open_run(proposal=PROPOSAL_NUM, run=args.run)
+
+    sel = run.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data')
+    train_ids = np.array(sel.train_ids)
+
+    if args.n_total_trains ==-1:
+        args.n_total_trains = train_ids.size
+
+
 
     with h5py.File(f'{args.h5dir}/r{args.h5name}', 'w') as f:
 
