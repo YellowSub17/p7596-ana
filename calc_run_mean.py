@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
     with h5py.File(args.h5in, 'r') as h5in:
         assert args.run == h5in['/args/run'][...], f'run in h5file {h5in["/args/run"]} and run in command {args.run} are not the same'
-        args.n_ana_trains = h5in['/args/n_ana_trains']
+        args.n_ana_trains = h5in['/args/n_ana_trains'][...]
 
 
     assert args.n_ana_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
