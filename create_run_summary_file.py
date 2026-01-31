@@ -20,7 +20,7 @@ if __name__ == '__main__':
     parser.add_argument("run", type=int, help='Run number to summarize.')
     parser.add_argument("--h5dir", default=None, help='Directory to save h5 file.')
     parser.add_argument("--h5name", default=None, help='Name of the h5 file.')
-    parser.add_argument("--n-trains", type=int, default=-1, help='Number of trains to summarize.')
+    parser.add_argument("--n-ana-trains", type=int, default=-1, help='Number of trains to summarize.')
 
 
     args = parser.parse_args()
@@ -36,8 +36,8 @@ if __name__ == '__main__':
 
     sel = run.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data')
     n_total_trains = len(sel.train_ids)
-    if args.n_trains ==-1:
-        args.n_trains = n_total_trains
+    if args.n_ana_trains ==-1:
+        args.n_ana_trains = n_total_trains
 
     tid, train_data = sel.train_from_index(0)
 
