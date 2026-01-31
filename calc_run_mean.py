@@ -41,10 +41,10 @@ if __name__ == '__main__':
         args.h5dir = f'{H5OUT_DIR}'
 
     if args.h5in is None:
-        args.h5in =f'{args.h5dir}/r{args.run}_summary.h5'
+        args.h5in =f'{args.h5dir}/r{args.run:04}_summary.h5'
 
     if args.h5out is None:
-        args.h5out =f'{args.h5dir}/r{args.run}_mean.h5'
+        args.h5out =f'{args.h5dir}/r{args.run:04}_mean.h5'
 
 
 

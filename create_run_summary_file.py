@@ -29,7 +29,7 @@ if __name__ == '__main__':
         args.h5dir = f'{H5OUT_DIR}'
 
     if args.h5name is None:
-        args.h5name =f'r{args.run}_summary.h5'
+        args.h5name =f'r{args.run:04}_summary.h5'
 
 
     run = extra_data.open_run(proposal=PROPOSAL_NUM, run=args.run)
