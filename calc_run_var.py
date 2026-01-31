@@ -52,14 +52,17 @@ if __name__ == '__main__':
     with h5py.File(args.h5in, 'r') as h5in:
         mean_im = h5in['/mean_im'][:]
         args.n_trains = h5in['/n_trains'][:]
+        train_ids = h5in['/train_ids'][:]
 
 
     assert args.n_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
 
 
     run = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run)
+    run_upto = run.select_trains(train_range = extra_data.by_id[train_ids])
 
-    run_upto = run.select_trains(train_range = np.s_[:args.n_trains])
+
+
     worker_run = list(run_upto.split_trains(parts=mpi_size))[mpi_rank]
 
     worker_sel = worker_run.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data')
@@ -121,16 +124,14 @@ if __name__ == '__main__':
             run_train_ids += list(worker)
 
 
-        run_mean_im = run_sum_im/np.sum(run_nframes)
+        run_var_im = run_sum_im/np.sum(args.n_trains*n_pulses)
 
         t1 = time.perf_counter() - t0
         print(f'Time: {round(t1, 2)}')
 
 
         with h5py.File(args.h5out, 'w') as h5out:
-            h5out['/mean_im'] = run_mean_im
-            h5out['/sum_im'] = run_sum_im
-            h5out['/sumsq_im'] = run_sumsq_im
+            h5out['/var_im'] = run_mean_im
 
             h5out['/train_ids'] = run_train_ids
             h5out['/n_pulses'] = n_pulses
