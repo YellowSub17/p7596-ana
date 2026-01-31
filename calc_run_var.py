@@ -67,7 +67,7 @@ if __name__ == '__main__':
     worker_train_ids = np.array(worker_sel.train_ids)
     worker_ntrains = worker_train_ids.size
 
-    worker_sum_im = np.zeros(DET_SHAPE)
+    worker_sum_im = np.zeros(cnst.DET_SHAPE)
 
 
 
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     n_pulses = stack.shape[0]
 
     if mpi_rank ==0:
-        run_sum_im = np.zeros(DET_SHAPE)
+        run_sum_im = np.zeros(cnst.DET_SHAPE)
     else:
         run_sum_im = None
 
