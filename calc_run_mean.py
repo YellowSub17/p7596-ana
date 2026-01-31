@@ -9,7 +9,6 @@ import extra_geom
 from extra_data.components import AGIPD1M
 import time
 
-
 from mpi4py import MPI
 
 
@@ -29,34 +28,38 @@ if __name__ == '__main__':
         print(f'Running MPI with {mpi_size} rank(s)')
 
 
-    parser = argparse.ArgumentParser("Calculate mean")
+    parser = argparse.ArgumentParser("Calculate sum and mean of run.")
 
-
-    parser.add_argument("run", type=int, help='Run number to summarize.')
-    parser.add_argument("--h5out", default=None)
-    parser.add_argument("--n-total-trains", type=int, default=-1, help='Number of trains to summarize.')
-
-
-
+    parser.add_argument("run", type=int, help='Run number.')
+    parser.add_argument("--h5dir", default=None, help='Directory to save h5 file.')
+    parser.add_argument("--h5in", default=None, help='Name of the summary h5 file.')
+    parser.add_argument("--h5out", default=None, help='Name of the output mean and sum h5 file.')
 
     args = parser.parse_args()
 
-    if args.h5out is None:
-        args.h5out = f'{H5OUT_DIR}/r{args.run:04d}_mean.h5'
+    if args.h5dir is None:
+        args.h5dir = f'{H5OUT_DIR}'
 
-    if args.n_total_trains ==-1:
-        args.n_total_trains = len(run.train_ids)
+    if args.h5in is None:
+        args.h5in =f'{args.h5dir}/r{args.run}_summary.h5'
+
+    if args.h5out is None:
+        args.h5out =f'{args.h5dir}/r{args.run}_mean.h5'
+
+
+
+    with h5py.File(args.h5in, 'r') as h5in:
+        assert args.run == h5in['/args/run']
+        args.n_total_trains = h5in['/args/n-total-trains']
+
 
     assert args.n_total_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
 
 
-
     run = extra_data.open_run(proposal=PROPOSAL_NUM, run=args.run)
-
 
     run_upto = run.select_trains(train_range = np.s_[:args.n_total_trains])
     worker_run = list(run_upto.split_trains(parts=mpi_size))[mpi_rank]
-
 
     worker_sel = worker_run.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data')
 
@@ -139,15 +142,15 @@ if __name__ == '__main__':
 
 
         with h5py.File(args.h5out, 'w') as h5out:
-            h5out['/run/mean_im'] = run_mean_im
-            h5out['/run/sum_im'] = run_sum_im
-            h5out['/run/sumsq_im'] = run_sumsq_im
+            h5out['/mean_im'] = run_mean_im
+            h5out['/sum_im'] = run_sum_im
+            h5out['/sumsq_im'] = run_sumsq_im
 
-            h5out['/run/train_ids'] = run_train_ids
-            h5out['/run/nframes'] = run_nframes
+            h5out['/train_ids'] = run_train_ids
+            h5out['/nframes'] = run_nframes
 
-            for key, value in vars(args).items():
-                h5out[f'/args/{key}'] = value
+            # for key, value in vars(args).items():
+                # h5out[f'/args/{key}'] = value
 
 
 
