@@ -27,7 +27,7 @@ if __name__ == '__main__':
     if mpi_rank ==0:
         print(f'Running MPI with {mpi_size} rank(s)')
 
-    parser = argparse.ArgumentParser("Calculate sum and mean of run.")
+    parser = argparse.ArgumentParser("Calculate variance of run.")
 
     parser.add_argument("run", type=int, help='Run number.')
     parser.add_argument("--h5dir", default=None, help='Directory to save h5 file.')
@@ -49,6 +49,7 @@ if __name__ == '__main__':
         args.h5in = f'{args.h5dir}/r{args.run:04}_mean.h5'
 
 
+
     with h5py.File(args.h5in, 'r') as h5in:
         mean_im = h5in['/mean_im'][:]
         args.n_trains = h5in['/n_trains'][...]
@@ -62,7 +63,6 @@ if __name__ == '__main__':
     run_upto = run.select_trains(train_range = extra_data.by_id[train_ids])
 
 
-
     worker_run = list(run_upto.split_trains(parts=mpi_size))[mpi_rank]
 
     worker_sel = worker_run.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data')
@@ -71,7 +71,6 @@ if __name__ == '__main__':
     worker_ntrains = worker_train_ids.size
 
     worker_sum_im = np.zeros(cnst.DET_SHAPE)
-
 
 
 
