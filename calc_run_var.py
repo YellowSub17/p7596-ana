@@ -82,7 +82,13 @@ if __name__ == '__main__':
     t_loop0 = time.perf_counter()
     for i_train, (train_id, train_data) in enumerate(worker_sel.trains()):
 
-        stack = extra_data.stack_detector_data(train_data, 'image.data')[:, 0,...] #pulses, ??, modules, fast scan, slow scan 
+        # ,stack = extra_data.stack_detector_data(train_data, 'image.data')[:, 0,...] #pulses, ??, modules, fast scan, slow scan 
+        try:
+            stack = extra_data.stack_detector_data(train_data, 'image.data')[:, 0,...] #pulses, ??, modules, fast scan, slow scan 
+        except ValueError:
+            print(f'Rank {mpi_rank}: Generating stack failed.\n\t{i_train=}, {train_id}: var calc')
+            continue
+
 
         train_min_mean_sq = (stack - mean_im)**2
 

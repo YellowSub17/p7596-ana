@@ -81,7 +81,7 @@ if __name__ == '__main__':
         try:
             stack = extra_data.stack_detector_data(train_data, 'image.data')[:, 0,...] #pulses, ??, modules, fast scan, slow scan 
         except ValueError:
-            print(f'Rank {mpi_rank}: Generating stack failed.\n\t{i_train=}, {train_id}')
+            print(f'Rank {mpi_rank}: Generating stack failed.\n\t{i_train=}, {train_id}: mean calc')
             continue
 
         train_sum_im = stack.sum(axis=0)
