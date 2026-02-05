@@ -57,13 +57,12 @@ if __name__ == '__main__':
     assert f_run == args.run, f'cmd input run {args.run} is different from file run {f_run}'
     assert f_n_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
 
-
+    worker_train_ids = np.array_split(f_train_ids, mpi_size)[mpi_rank]
 
 
     run = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run)
-    run_upto = run.select_trains(extra_data.by_id[f_n_trains])
 
-    worker_run = list(run_upto.split_trains(parts=mpi_size))[mpi_rank]
+    worker_run = run.select_trains(extra_data.by_id[worker_train_ids])
 
     worker_sel = worker_run.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data')
 
