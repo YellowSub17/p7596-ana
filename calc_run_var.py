@@ -27,43 +27,45 @@ if __name__ == '__main__':
     if mpi_rank ==0:
         print(f'Running MPI with {mpi_size} rank(s)')
 
-    parser = argparse.ArgumentParser("Calculate variance of run.")
+    parser = argparse.ArgumentParser("Calculate sum and mean of run.")
 
     parser.add_argument("run", type=int, help='Run number.')
-    parser.add_argument("--h5dir", default=None, help='Directory to save h5 file.')
-    parser.add_argument("--h5out", default=None, help='Name of the output variance h5 file.')
-    parser.add_argument("--h5in", default=None, help='Name of the input mean h5 file.')
+    parser.add_argument("--h5fname", default=None, help='Name of the input/output h5 file.')
+
 
     args = parser.parse_args()
 
     run = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run)
     sel = run.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data')
 
-    if args.h5dir is None:
-        args.h5dir = f'{cnst.H5OUT_DIR}'
 
-    if args.h5out is None:
-        args.h5out =f'{args.h5dir}/r{args.run:04}_var.h5'
-
-    if args.h5in is None:
-        args.h5in = f'{args.h5dir}/r{args.run:04}_mean.h5'
+    if args.h5fname is None:
+        args.h5fname =f'{cnst.H5OUT_DIR}/r{args.run:04}_ana.h5'
+    assert os.path.exists(args.h5file), f'h5 file {args.h5file} does not exist'
 
 
+    with h5py.File(f'{args.h5file}', 'r') as f:
+        f_train_ids = f['/train_ids'][...]
+        f_n_trains = f['/n_trains'][...]
+        f_n_pulses = f['/n_pulses'][...]
+        f_run =  f['/run'][...]
+        f_mean_im = f['/mean_im'][...]
 
-    with h5py.File(args.h5in, 'r') as h5in:
-        mean_im = h5in['/mean_im'][:]
-        args.n_trains = h5in['/n_trains'][...]
-        train_ids = h5in['/train_ids'][:]
+    assert f_run == args.run, f'cmd input run {args.run} is different from file run {f_run}'
+    assert f_n_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
 
 
-    assert args.n_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
+    if mpi_rank ==0:
+        print(f'Calculating average for run {args.run} with {f_n_trains} trains')
+
+
+
+    worker_train_ids = np.array_split(f_train_ids, mpi_size)[mpi_rank]
 
 
     run = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run)
-    run_upto = run.select_trains(train_range = extra_data.by_id[train_ids])
 
-
-    worker_run = list(run_upto.split_trains(parts=mpi_size))[mpi_rank]
+    worker_run = run.select_trains(extra_data.by_id[worker_train_ids])
 
     worker_sel = worker_run.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data')
 
@@ -72,21 +74,15 @@ if __name__ == '__main__':
 
     worker_sum_im = np.zeros(cnst.DET_SHAPE)
 
-
-
-
-
-
     print(f'Worker {mpi_rank} handling {worker_ntrains} trains.')
 
     t_loop0 = time.perf_counter()
     for i_train, (train_id, train_data) in enumerate(worker_sel.trains()):
 
-        # ,stack = extra_data.stack_detector_data(train_data, 'image.data')[:, 0,...] #pulses, ??, modules, fast scan, slow scan 
         try:
             stack = extra_data.stack_detector_data(train_data, 'image.data')[:, 0,...] #pulses, ??, modules, fast scan, slow scan 
         except ValueError:
-            print(f'Rank {mpi_rank}: Generating stack failed.\n\t{i_train=}, {train_id}: var calc')
+            print(f'Rank {mpi_rank}: Generating stack failed.\n\t{i_train=}, {train_id}: mean calc')
             continue
 
 
@@ -135,14 +131,8 @@ if __name__ == '__main__':
         print(f'Time: {round(t1, 2)}')
 
 
-        with h5py.File(args.h5out, 'w') as h5out:
+        with h5py.File(args.h5out, 'a') as h5out:
             h5out['/var_im'] = run_var_im
-
-            h5out['/train_ids'] = run_train_ids
-            h5out['/n_pulses'] = n_pulses
-
-            h5out['/calc_time'] = t1
-
 
 
 

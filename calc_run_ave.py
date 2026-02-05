@@ -32,24 +32,21 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser("Calculate sum and mean of run.")
 
     parser.add_argument("run", type=int, help='Run number.')
-    parser.add_argument("--h5", default=None, help='Name of the input/output h5 file.')
+    parser.add_argument("--h5fname", default=None, help='Name of the input/output h5 file.')
 
 
     args = parser.parse_args()
 
     run = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run)
     sel = run.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data')
-    n_total_trains = len(sel.train_ids)
 
 
-    if args.h5 is None:
-        args.h5out =f'{cnst.H5OUT_DIR}/r{args.run:04}_ana.h5'
+    if args.h5fname is None:
+        args.h5fname =f'{cnst.H5OUT_DIR}/r{args.run:04}_ana.h5'
+    assert os.path.exists(args.h5file), f'h5 file {args.h5file} does not exist'
 
-    assert os.path.exists(args.h5out), f'h5 file {args.h5out} does not exist'
 
-
-    with h5py.File(f'{args.h5out}', 'r') as f:
-
+    with h5py.File(f'{args.h5file}', 'r') as f:
         f_train_ids = f['/train_ids'][...]
         f_n_trains = f['/n_trains'][...]
         f_n_pulses = f['/n_pulses'][...]
@@ -143,8 +140,8 @@ if __name__ == '__main__':
         print(f'Total calculation time: {round(t1, 2)}')
 
 
-        with h5py.File(args.h5out, 'a') as h5out:
-            h5out['/mean_im'] = run_mean_im
+        with h5py.File(args.h5file, 'a') as h5out:
+            h5out['/mean_im'] =run_mean_im
             h5out['/sum_im'] = run_sum_im
             h5out['/sumsq_im'] = run_sumsq_im
 

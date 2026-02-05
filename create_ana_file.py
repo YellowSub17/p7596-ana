@@ -17,13 +17,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser("Create a run summary file.")
 
     parser.add_argument("run", type=int, help='Run number to summarize.')
-    parser.add_argument("--h5out", default=None, help='Directory to save h5 file.')
+    parser.add_argument("--h5file", default=None, help='Directory to save h5 file.')
     parser.add_argument("--n-trains", type=int, default=-1, help='Number of trains to summarize.')
 
     args = parser.parse_args()
 
-    if args.h5out is None:
-        args.h5out =f'{cnst.H5OUT_DIR}/r{args.run:04}_ana.h5'
+    if args.h5file is None:
+        args.h5file =f'{cnst.H5OUT_DIR}/r{args.run:04}_ana.h5'
 
     run = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run)
 
@@ -43,7 +43,7 @@ if __name__ == '__main__':
     n_pulses = stack.shape[0]
 
 
-    with h5py.File(f'{args.h5out}', 'w') as f:
+    with h5py.File(f'{args.h5file}', 'w') as f:
 
         f[f'/train_ids'] = train_ids
         f[f'/n_trains'] = args.n_trains
