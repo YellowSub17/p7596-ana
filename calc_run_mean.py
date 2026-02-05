@@ -61,7 +61,7 @@ if __name__ == '__main__':
 
 
     run = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run)
-    run_upto = run.select_trains(extra_data.by_id[f_trains])
+    run_upto = run.select_trains(extra_data.by_id[f_n_trains])
 
     worker_run = list(run_upto.split_trains(parts=mpi_size))[mpi_rank]
 
@@ -129,7 +129,7 @@ if __name__ == '__main__':
         for worker in all_worker_train_ids:
             run_train_ids += list(worker)
 
-        if run_train_ids != f_trains:
+        if run_train_ids != f_n_trains:
             print('Throwing flag, train id mismatch')
 
         run_mean_im = run_sum_im/np.sum(args.n_trains*n_pulses)
