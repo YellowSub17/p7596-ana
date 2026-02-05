@@ -126,7 +126,7 @@ if __name__ == '__main__':
             run_train_ids += list(worker)
 
 
-        run_var_im = run_sum_im/np.sum(args.n_trains*n_pulses)
+        run_var_im = run_sum_im/np.sum(f_n_trains*n_pulses)
 
         t1 = time.perf_counter() - t0
         print(f'Time: {round(t1, 2)}')
