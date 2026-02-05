@@ -9,6 +9,8 @@ import extra_geom
 from extra_data.components import AGIPD1M
 import time
 
+
+import os
 from mpi4py import MPI
 
 
@@ -32,9 +34,6 @@ if __name__ == '__main__':
     parser.add_argument("run", type=int, help='Run number.')
     parser.add_argument("--h5", default=None, help='Name of the input/output h5 file.')
 
-    # parser.add_argument("--h5dir", default=None, help='Directory to save h5 file.')
-    # parser.add_argument("--h5out", default=None, help='Name of the output mean and sum h5 file.')
-    # parser.add_argument("--n-trains", type=int, default=-1, help='Number of trains to summarize.')
 
     args = parser.parse_args()
 
@@ -46,6 +45,8 @@ if __name__ == '__main__':
     if args.h5 is None:
         args.h5out =f'{cnst.H5OUT_DIR}/r{args.run:04}_ana.h5'
 
+    assert os.path.exists(args.h5out), f'h5 file {args.h5out} does not exist'
+
 
     with h5py.File(f'{args.h5out}', 'r') as f:
 
@@ -56,6 +57,11 @@ if __name__ == '__main__':
 
     assert f_run == args.run, f'cmd input run {args.run} is different from file run {f_run}'
     assert f_n_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
+
+
+    if mpi_rank ==0:
+        print(f'Calculating average for run {args.run} with {f_n_trains} trains')
+
 
     worker_train_ids = np.array_split(f_train_ids, mpi_size)[mpi_rank]
 
@@ -137,15 +143,15 @@ if __name__ == '__main__':
         print(f'Total calculation time: {round(t1, 2)}')
 
 
-        with h5py.File(args.h5out, 'w') as h5out:
+        with h5py.File(args.h5out, 'a') as h5out:
             h5out['/mean_im'] = run_mean_im
             h5out['/sum_im'] = run_sum_im
             h5out['/sumsq_im'] = run_sumsq_im
 
-            h5out['/train_ids'] = run_train_ids
-            h5out['/n_pulses'] = n_pulses
-            h5out['/n_trains'] = f_n_trains
-            h5out['/run'] = args.run
+            # h5out['/train_ids'] = run_train_ids
+            # h5out['/n_pulses'] = n_pulses
+            # h5out['/n_trains'] = f_n_trains
+            # h5out['/run'] = args.run
 
 
 
