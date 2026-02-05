@@ -131,7 +131,7 @@ if __name__ == '__main__':
         if np.array_equal(run_train_ids, f_n_trains):
             print('Throwing flag, train id mismatch')
 
-        run_mean_im = run_sum_im/np.sum(args.n_trains*n_pulses)
+        run_mean_im = run_sum_im/np.sum(f_n_trains*n_pulses)
 
         t1 = time.perf_counter() - t0
         print(f'Total calculation time: {round(t1, 2)}')
@@ -144,7 +144,7 @@ if __name__ == '__main__':
 
             h5out['/train_ids'] = run_train_ids
             h5out['/n_pulses'] = n_pulses
-            h5out['/n_trains'] = args.n_trains
+            h5out['/n_trains'] = f_n_trains
             h5out['/run'] = args.run
 
 
