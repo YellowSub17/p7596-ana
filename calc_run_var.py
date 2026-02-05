@@ -41,10 +41,10 @@ if __name__ == '__main__':
 
     if args.h5fname is None:
         args.h5fname =f'{cnst.H5OUT_DIR}/r{args.run:04}_ana.h5'
-    assert os.path.exists(args.h5file), f'h5 file {args.h5file} does not exist'
+    assert os.path.exists(args.h5fname), f'h5 file {args.h5fname} does not exist'
 
 
-    with h5py.File(f'{args.h5file}', 'r') as f:
+    with h5py.File(f'{args.h5fname}', 'r') as f:
         f_train_ids = f['/train_ids'][...]
         f_n_trains = f['/n_trains'][...]
         f_n_pulses = f['/n_pulses'][...]
@@ -131,7 +131,7 @@ if __name__ == '__main__':
         print(f'Time: {round(t1, 2)}')
 
 
-        with h5py.File(args.h5out, 'a') as h5out:
+        with h5py.File(args.h5fname, 'a') as h5out:
             h5out['/var_im'] = run_var_im
 
 
