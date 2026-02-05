@@ -30,30 +30,39 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser("Calculate sum and mean of run.")
 
     parser.add_argument("run", type=int, help='Run number.')
-    parser.add_argument("--h5dir", default=None, help='Directory to save h5 file.')
-    parser.add_argument("--h5out", default=None, help='Name of the output mean and sum h5 file.')
-    parser.add_argument("--n-trains", type=int, default=-1, help='Number of trains to summarize.')
+    parser.add_argument("--h5", default=None, help='Name of the input/output h5 file.')
+
+    # parser.add_argument("--h5dir", default=None, help='Directory to save h5 file.')
+    # parser.add_argument("--h5out", default=None, help='Name of the output mean and sum h5 file.')
+    # parser.add_argument("--n-trains", type=int, default=-1, help='Number of trains to summarize.')
 
     args = parser.parse_args()
 
     run = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run)
     sel = run.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data')
     n_total_trains = len(sel.train_ids)
-    if args.n_trains ==-1:
-        args.n_trains = n_total_trains
 
-    if args.h5dir is None:
-        args.h5dir = f'{cnst.H5OUT_DIR}'
 
-    if args.h5out is None:
-        args.h5out =f'{args.h5dir}/r{args.run:04}_mean.h5'
+    if args.h5 is None:
+        args.h5out =f'{cnst.H5OUT_DIR}/r{args.run:04}_ana.h5'
 
+
+    with h5py.File(f'{args.h5out}', 'r') as f:
+
+        f_train_ids = f['/train_ids'][...]
+        f_n_trains = f['/n_trains'][...]
+        f_n_pulses = f['/n_pulses'][...]
+        f_run =  f['/run'][...]
+
+    assert f_run == args.run, f'cmd input run {args.run} is different from file run {f_run}'
     assert args.n_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
 
 
-    run = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run)
 
-    run_upto = run.select_trains(train_range = np.s_[:args.n_trains])
+
+    run = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run)
+    run_upto = run.select_trains(extra_data.by_id[f_trains])
+
     worker_run = list(run_upto.split_trains(parts=mpi_size))[mpi_rank]
 
     worker_sel = worker_run.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data')
@@ -78,6 +87,7 @@ if __name__ == '__main__':
         train_sum_im = stack.sum(axis=0)
         worker_sum_im += train_sum_im
         worker_sumsq_im += train_sum_im**2
+
 
 
         if mpi_rank==0 and i_train%10==0:
@@ -119,11 +129,13 @@ if __name__ == '__main__':
         for worker in all_worker_train_ids:
             run_train_ids += list(worker)
 
+        if run_train_ids != f_trains:
+            print('Throwing flag, train id mismatch')
 
         run_mean_im = run_sum_im/np.sum(args.n_trains*n_pulses)
 
         t1 = time.perf_counter() - t0
-        print(f'Time: {round(t1, 2)}')
+        print(f'Total calculation time: {round(t1, 2)}')
 
 
         with h5py.File(args.h5out, 'w') as h5out:
@@ -134,8 +146,11 @@ if __name__ == '__main__':
             h5out['/train_ids'] = run_train_ids
             h5out['/n_pulses'] = n_pulses
             h5out['/n_trains'] = args.n_trains
+            h5out['/run'] = args.run
 
-            h5out['/calc_time'] = t1
+
+
+
 
 
 
