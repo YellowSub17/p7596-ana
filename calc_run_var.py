@@ -87,7 +87,7 @@ if __name__ == '__main__':
             continue
 
 
-        train_min_mean_sq = (stack - mean_im)**2
+        train_min_mean_sq = (stack - f_mean_im)**2
 
         train_sum = train_min_mean_sq.sum(axis=0)
 
