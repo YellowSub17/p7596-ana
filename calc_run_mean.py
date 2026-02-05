@@ -55,7 +55,7 @@ if __name__ == '__main__':
         f_run =  f['/run'][...]
 
     assert f_run == args.run, f'cmd input run {args.run} is different from file run {f_run}'
-    assert args.n_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
+    assert f_n_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
 
 
 
