@@ -23,7 +23,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.h5out is None:
-        args.h5out =f'{cnst.H5OUT_DIR}/r{run:04}_ana.h5'
+        args.h5out =f'{cnst.H5OUT_DIR}/r{args.run:04}_ana.h5'
 
     run = extra_data.open_run(proposal=PROPOSAL_NUM, run=args.run)
 
