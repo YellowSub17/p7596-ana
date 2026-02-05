@@ -128,7 +128,7 @@ if __name__ == '__main__':
         for worker in all_worker_train_ids:
             run_train_ids += list(worker)
 
-        if run_train_ids != f_n_trains:
+        if np.array_equal(run_train_ids, f_n_trains):
             print('Throwing flag, train id mismatch')
 
         run_mean_im = run_sum_im/np.sum(args.n_trains*n_pulses)
