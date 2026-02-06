@@ -32,7 +32,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser("Calculate sum and mean of run.")
 
     parser.add_argument("run", type=int, help='Run number.')
-    parser.add_argument("--h5fname", default=None, help='Name of the input/output h5 file.')
+    parser.add_argument("--h5ana", default=None, help='Name of the input h5 file.')
+    parser.add_argument("--h5ave", default=None, help='Name of the output h5 file.')
 
 
     args = parser.parse_args()
@@ -40,28 +41,31 @@ if __name__ == '__main__':
     run = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run)
     sel = run.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data')
 
+    if args.h5ana is None:
+        args.h5ana =f'{cnst.H5OUT_DIR}/r{args.run:04}_ana.h5'
 
-    if args.h5fname is None:
-        args.h5fname =f'{cnst.H5OUT_DIR}/r{args.run:04}_ana.h5'
-    assert os.path.exists(args.h5fname), f'h5 file {args.h5fname} does not exist'
+    if args.h5ave is None:
+        args.h5ave =f'{cnst.H5OUT_DIR}/r{args.run:04}_ave.h5'
+
+    assert os.path.exists(args.h5ana), f'h5 ana file {args.h5ana} does not exist'
 
 
-    with h5py.File(f'{args.h5fname}', 'r') as f:
-        f_train_ids = f['/train_ids'][...]
-        f_n_trains = f['/n_trains'][...]
-        f_n_pulses = f['/n_pulses'][...]
-        f_run =  f['/run'][...]
 
-    assert f_run == args.run, f'cmd input run {args.run} is different from file run {f_run}'
-    assert f_n_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
+    with h5py.File(f'{args.h5ana}', 'r') as h5in:
+        ana_train_ids = h5in['/train_ids'][...]
+        ana_n_trains = h5in['/n_trains'][...]
+        ana_n_pulses = h5in['/n_pulses'][...]
+        ana_run =  h5in['/run'][...]
+
+    assert ana_run == args.run, f'cmd input run {args.run} is different from file run {f_run}'
+    assert ana_n_trains >= mpi_size, 'TOO FEW TRAINS OR TOO MANY MPI RANKS'
 
 
     if mpi_rank ==0:
-        print(f'Calculating average for run {args.run} with {f_n_trains} trains')
+        print(f'Calculating average for run {args.run} with {ana_n_trains} trains, {ana_n_pulses} pulses per train.')
 
 
     worker_train_ids = np.array_split(f_train_ids, mpi_size)[mpi_rank]
-
 
     run = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run)
 
@@ -75,7 +79,8 @@ if __name__ == '__main__':
     worker_sum_im = np.zeros(cnst.DET_SHAPE)
     worker_sumsq_im = np.zeros(cnst.DET_SHAPE)
 
-    print(f'Worker {mpi_rank} handling {worker_ntrains} trains.')
+    if mpi_rank==0:
+        print(f'Worker {mpi_rank} handling {worker_ntrains} trains.')
 
     t_loop0 = time.perf_counter()
     for i_train, (train_id, train_data) in enumerate(worker_sel.trains()):
@@ -90,15 +95,13 @@ if __name__ == '__main__':
         worker_sum_im += train_sum_im
         worker_sumsq_im += train_sum_im**2
 
-
-
         if mpi_rank==0 and i_train%10==0:
             t_loop1 = time.perf_counter() - t_loop0
             print(f'Loop {i_train} took {round(t_loop1)} seconds.')
             t_loop0 = time.perf_counter()
 
-
     n_pulses = stack.shape[0]
+
 
     if mpi_rank ==0:
         run_sum_im = np.zeros(cnst.DET_SHAPE)
@@ -135,20 +138,21 @@ if __name__ == '__main__':
             print('Throwing flag, train id mismatch')
 
         run_mean_im = run_sum_im/np.sum(f_n_trains*n_pulses)
+        run_var_im = run_sumsq_im/np.sum(f_n_trains*n_pulses)
 
         t1 = time.perf_counter() - t0
         print(f'Total calculation time: {round(t1, 2)}')
 
 
-        with h5py.File(args.h5fname, 'a') as h5out:
+        with h5py.File(args.h5ave, 'a') as h5out:
             h5out['/mean_im'] =run_mean_im
             h5out['/sum_im'] = run_sum_im
             h5out['/sumsq_im'] = run_sumsq_im
 
-            # h5out['/train_ids'] = run_train_ids
-            # h5out['/n_pulses'] = n_pulses
-            # h5out['/n_trains'] = f_n_trains
-            # h5out['/run'] = args.run
+            h5out['/ana/train_ids'] = run_train_ids
+            h5out['/ana/n_pulses'] = n_pulses
+            h5out['/ana/n_trains'] = f_n_trains
+            h5out['/ana/run'] = args.run
 
 
 
