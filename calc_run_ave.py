@@ -44,8 +44,6 @@ if __name__ == '__main__':
         args.h5fname =f'{cnst.H5OUT_DIR}/r{args.run:04}_ave.h5'
 
 
-    if mpi_rank ==0:
-        print(f'Calculating average for run {args.run} with {ana_n_trains} trains, {ana_n_pulses} pulses per train.')
 
 
     run = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run)
@@ -55,6 +53,9 @@ if __name__ == '__main__':
     if args.n_trains ==-1:
         args.n_trains = n_total_trains
     run_train_ids = run_train_ids[:args.n_trains]
+
+    if mpi_rank ==0:
+        print(f'Calculating average for run {args.run} with {args.n_trains} trains.')
 
     worker_train_ids = np.array_split(run_train_ids, mpi_size)[mpi_rank]
     worker_run = run.select_trains(extra_data.by_id[worker_train_ids])
