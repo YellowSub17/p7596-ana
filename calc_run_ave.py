@@ -118,19 +118,18 @@ if __name__ == '__main__':
 
 
 
+    skip_count = mpi_comm.reduce(worker_skip_count, op=MPI.SUM, root=0)
 
+    skip_ids = np.array(skip_ids, dtype=np.int32)
 
-
-
-
-
+    all_skip_ids = mpi_comm.gather(skip_ids, root=0)
 
 
     if mpi_rank==0:
 
+        # skip_ids = set(sum(mpi_comm.allgather(worker_skip_ids), []))
 
-        skip_count = mpi_comm.reduce(worker_skip_count, op=MPI.SUM, root=0)
-        skip_ids = set(sum(mpi_comm.allgather(worker_skip_ids), []))
+        skip_ids = np.concatenate(all_arrays)
 
         args.n_trains -= skip_count
 
