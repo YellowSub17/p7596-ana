@@ -85,8 +85,8 @@ if __name__ == '__main__':
         worker_sum_im += train_sum_im
         worker_sumsq_im += train_sum_im**2
 
-        # if mpi_rank==0 and i_train%10==0:
-        if mpi_rank==0:
+        if mpi_rank==0 and i_train%10==0:
+        # if mpi_rank==0:
             t_loop1 = time.perf_counter() - t_loop0
             print(f'Loop {i_train} took {round(t_loop1)} seconds.')
             t_loop0 = time.perf_counter()
