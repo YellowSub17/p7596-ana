@@ -128,8 +128,8 @@ if __name__ == '__main__':
     if mpi_rank==0:
 
 
-        skip_count = comm.reduce(worker_skip_count, op=MPI.SUM, root=0)
-        skip_ids = set(sum(comm.allgather(worker_skip_ids), []))
+        skip_count = mpi_comm.reduce(worker_skip_count, op=MPI.SUM, root=0)
+        skip_ids = set(sum(mpi_comm.allgather(worker_skip_ids), []))
 
         args.n_trains -= skip_count
 
