@@ -56,7 +56,7 @@ if __name__ == '__main__':
         args.n_trains = n_total_trains
     run_train_ids = run_train_ids[:args.n_trains]
 
-    worker_train_ids = np.array_split(sel.train_ids[:args.ntrains], mpi_size)[mpi_rank]
+    worker_train_ids = np.array_split(run_train_ids, mpi_size)[mpi_rank]
     worker_run = run.select_trains(extra_data.by_id[worker_train_ids])
     worker_sel = worker_run.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data')
     worker_sum_im = np.zeros(cnst.DET_SHAPE)
