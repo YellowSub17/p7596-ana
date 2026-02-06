@@ -127,7 +127,6 @@ if __name__ == '__main__':
 
     if mpi_rank==0:
 
-        # skip_ids = set(sum(mpi_comm.allgather(worker_skip_ids), []))
 
         skip_ids = np.concatenate(all_skip_ids)
 
@@ -139,7 +138,7 @@ if __name__ == '__main__':
         run_var_im = run_sumsq_im/np.sum(args.n_trains*n_pulses)
 
         t1 = time.perf_counter() - t0
-        print(f'Total calculation time: {round(t1, 2)}')
+        print(f'Total calculation time: {round(t1/60, 2)} minutes')
 
         with h5py.File(args.h5fname, 'w') as h5out:
             h5out['/mean_im'] =run_mean_im
