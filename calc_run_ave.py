@@ -64,7 +64,7 @@ if __name__ == '__main__':
     worker_sumsq_im = np.zeros(cnst.DET_SHAPE)
 
     if mpi_rank==0:
-        print(f'Worker {mpi_rank} handling {worker_train_ids.size} trains.')
+        print(f'Worker 0  handling {worker_train_ids.size} trains.')
 
     t_loop0 = time.perf_counter()
     for i_train, (train_id, train_data) in enumerate(worker_sel.trains()):
