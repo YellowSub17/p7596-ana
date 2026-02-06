@@ -119,7 +119,7 @@ if __name__ == '__main__':
         t1 = time.perf_counter() - t0
         print(f'Total calculation time: {round(t1, 2)}')
 
-        with h5py.File(args.h5ave, 'a') as h5out:
+        with h5py.File(args.h5fname, 'a') as h5out:
             h5out['/mean_im'] =run_mean_im
             h5out['/sum_im'] = run_sum_im
             h5out['/sumsq_im'] = run_sumsq_im
