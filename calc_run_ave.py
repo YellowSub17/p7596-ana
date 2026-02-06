@@ -33,7 +33,7 @@ if __name__ == '__main__':
 
     parser.add_argument("run", type=int, help='Run number.')
     parser.add_argument("--h5fname", default=None, help='Name of the output h5 file.')
-    parser.add_argument("--n-trains", default=None, help='Number of trains to analyse.')
+    parser.add_argument("--n-trains", type=int, default=-1, help='Number of trains to analyse.')
 
     args = parser.parse_args()
 
