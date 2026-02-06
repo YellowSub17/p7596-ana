@@ -151,10 +151,10 @@ if __name__ == '__main__':
             h5out['/var_im'] = run_var_im
 
 
-            h5out['/ana/train_ids'] = run_train_ids
-            h5out['/ana/n_pulses'] = n_pulses
-            h5out['/ana/n_trains'] = f_n_trains
-            h5out['/ana/run'] = args.run
+            h5out['/ana/train_ids'] = ana_train_ids
+            h5out['/ana/n_pulses'] = ana_n_pulses
+            h5out['/ana/n_trains'] = ana_n_trains
+            h5out['/ana/run'] = ana_run
 
 
 
