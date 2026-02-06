@@ -65,7 +65,7 @@ if __name__ == '__main__':
         print(f'Calculating average for run {args.run} with {ana_n_trains} trains, {ana_n_pulses} pulses per train.')
 
 
-    worker_train_ids = np.array_split(f_train_ids, mpi_size)[mpi_rank]
+    worker_train_ids = np.array_split(ana_train_ids, mpi_size)[mpi_rank]
 
     run = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run)
 
@@ -134,11 +134,11 @@ if __name__ == '__main__':
         for worker in all_worker_train_ids:
             run_train_ids += list(worker)
 
-        if np.array_equal(run_train_ids, f_n_trains):
+        if np.array_equal(run_train_ids, ana_train_ids):
             print('Throwing flag, train id mismatch')
 
-        run_mean_im = run_sum_im/np.sum(f_n_trains*n_pulses)
-        run_var_im = run_sumsq_im/np.sum(f_n_trains*n_pulses)
+        run_mean_im = run_sum_im/np.sum(ana_n_trains*n_pulses)
+        run_var_im = run_sumsq_im/np.sum(ana_n_trains*n_pulses)
 
         t1 = time.perf_counter() - t0
         print(f'Total calculation time: {round(t1, 2)}')
@@ -148,6 +148,8 @@ if __name__ == '__main__':
             h5out['/mean_im'] =run_mean_im
             h5out['/sum_im'] = run_sum_im
             h5out['/sumsq_im'] = run_sumsq_im
+            h5out['/var_im'] = run_var_im
+
 
             h5out['/ana/train_ids'] = run_train_ids
             h5out['/ana/n_pulses'] = n_pulses
