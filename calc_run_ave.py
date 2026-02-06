@@ -28,7 +28,7 @@ if __name__ == '__main__':
 
     if mpi_rank ==0:
         print('calc_run_ave.py')
-        print(f'Running MPI with {mpi_size} rank(s)')
+        print(f'Running MPI with {mpi_size} rank(s).')
 
     parser = argparse.ArgumentParser("Calculate sum and mean of run.")
 
