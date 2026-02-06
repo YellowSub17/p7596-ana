@@ -120,7 +120,7 @@ if __name__ == '__main__':
 
     skip_count = mpi_comm.reduce(worker_skip_count, op=MPI.SUM, root=0)
 
-    worker_skip_ids = np.array(worker_skip_ids, dtype=np.int32)
+    worker_skip_ids = np.array(worker_skip_ids, dtype=np.int64)
 
     all_skip_ids = mpi_comm.gather(worker_skip_ids, root=0)
 
