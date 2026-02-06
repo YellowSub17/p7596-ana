@@ -27,6 +27,7 @@ if __name__ == '__main__':
     mpi_size = mpi_comm.Get_size()
 
     if mpi_rank ==0:
+        print('calc_run_ave.py')
         print(f'Running MPI with {mpi_size} rank(s)')
 
     parser = argparse.ArgumentParser("Calculate sum and mean of run.")
@@ -42,7 +43,6 @@ if __name__ == '__main__':
 
     if args.h5fname is None:
         args.h5fname =f'{cnst.H5OUT_DIR}/r{args.run:04}_ave.h5'
-
 
 
 
@@ -63,6 +63,10 @@ if __name__ == '__main__':
     worker_sum_im = np.zeros(cnst.DET_SHAPE)
     worker_sumsq_im = np.zeros(cnst.DET_SHAPE)
 
+
+    worker_skip_count = 0
+    worker_skip_ids = []
+
     if mpi_rank==0:
         print(f'Worker 0  handling {worker_train_ids.size} trains.')
 
@@ -73,6 +77,8 @@ if __name__ == '__main__':
             stack = extra_data.stack_detector_data(train_data, 'image.data')[:, 0,...] #pulses, ??, modules, fast scan, slow scan 
         except ValueError:
             print(f'Rank {mpi_rank}: Generating stack failed.\n\t{i_train=}, {train_id}: mean calc')
+            worker_skip_count +=1
+            worker_skip_ids.append(train_id)
             continue
 
         train_sum_im = stack.sum(axis=0)
@@ -111,7 +117,23 @@ if __name__ == '__main__':
 
 
 
+
+
+
+
+
+
+
+
     if mpi_rank==0:
+
+
+        skip_count = comm.reduce(worker_skip_count, op=MPI.SUM, root=0)
+        skip_ids = set(sum(comm.allgather(worker_skip_ids), []))
+
+        args.n_trains -= skip_count
+
+        calc_run_ids = [ run_id for run_id in run_train_ids if run_id not in skip_ids]
 
         run_mean_im = run_sum_im/np.sum(args.n_trains*n_pulses)
         run_var_im = run_sumsq_im/np.sum(args.n_trains*n_pulses)
@@ -125,7 +147,7 @@ if __name__ == '__main__':
             h5out['/sumsq_im'] = run_sumsq_im
             h5out['/var_im'] = run_var_im
 
-            h5out['/train_ids'] = run_train_ids
+            h5out['/train_ids'] = calc_run_ids
             h5out['/n_pulses'] = n_pulses
             h5out['/n_trains'] = args.n_trains
             h5out['/run'] = args.run
