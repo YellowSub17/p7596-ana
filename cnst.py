@@ -9,7 +9,7 @@ GEOM_DIR = f'{EXP_DIR}/usr/Shared/geom'
 GEOM_PATH = f'{GEOM_DIR}/agipd_p7821_r0005_v05.geom'
 
 MASK_DIR = f'{EXP_DIR}/usr/Shared/mask'
-MASK_PATH = f'{MASK_DIR}/mask_20260113.h5'
+MASK_PATH = f'{MASK_DIR}/mask.h5'
 
 H5OUT_DIR = f'{EXP_DIR}/usr/Shared/h5out'
 

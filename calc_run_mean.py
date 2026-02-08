@@ -27,7 +27,7 @@ if __name__ == '__main__':
     mpi_size = mpi_comm.Get_size()
 
     if mpi_rank ==0:
-        print('calc_run_ave.py')
+        print('calc_run_mean.py')
         print(f'Running MPI with {mpi_size} rank(s).')
 
     parser = argparse.ArgumentParser("Calculate sum and mean of run.")
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     sel = run.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data')
 
     if args.h5fname is None:
-        args.h5fname =f'{cnst.H5OUT_DIR}/r{args.run:04}_ave.h5'
+        args.h5fname =f'{cnst.H5OUT_DIR}/r{args.run:04}_mean.h5'
 
 
 
@@ -127,7 +127,6 @@ if __name__ == '__main__':
 
     if mpi_rank==0:
 
-
         skip_ids = np.concatenate(all_skip_ids)
 
         args.n_trains -= skip_count
@@ -135,7 +134,7 @@ if __name__ == '__main__':
         calc_run_ids = [ run_id for run_id in run_train_ids if run_id not in skip_ids]
 
         run_mean_im = run_sum_im/np.sum(args.n_trains*n_pulses)
-        run_var_im = run_sumsq_im/np.sum(args.n_trains*n_pulses)
+        run_vari_im = run_sumsq_im/np.sum(args.n_trains*n_pulses)
 
         t1 = time.perf_counter() - t0
         print(f'Total calculation time: {round(t1/60, 2)} minutes')
@@ -144,7 +143,7 @@ if __name__ == '__main__':
             h5out['/mean_im'] =run_mean_im
             h5out['/sum_im'] = run_sum_im
             h5out['/sumsq_im'] = run_sumsq_im
-            h5out['/var_im'] = run_var_im
+            h5out['/vari_im'] = run_vari_im
 
             h5out['/train_ids'] = calc_run_ids
             h5out['/n_pulses'] = n_pulses
