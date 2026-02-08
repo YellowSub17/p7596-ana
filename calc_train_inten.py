@@ -48,7 +48,7 @@ if __name__ == '__main__':
     if args.h5trains is None:
         args.h5trains = f'{cnst.H5OUT_DIR}/r{args.run:04}_mean.h5'
     with h5py.File(f'{args.h5trains}', 'r') as f:
-        run_train_ids = f['/train_ids']
+        run_train_ids = f['/train_ids'][...]
 
 
     if args.h5mask is None:
