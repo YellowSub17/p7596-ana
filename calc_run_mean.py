@@ -35,8 +35,6 @@ if __name__ == '__main__':
     parser.add_argument("run", type=int, help='Run number.')
     parser.add_argument("--h5fname", default=None, help='Name of the output h5 file.')
     parser.add_argument("--n-trains", type=int, default=-1, help='Number of trains to analyse.')
-
-
     parser.add_argument("--h5mask", default=None, help='Name of the mask h5 file.')
 
 
@@ -62,6 +60,11 @@ if __name__ == '__main__':
     run_proc = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run, data='proc')
     sel_proc = run_proc.select('SPB_DET_AGIPD1M-1/DET/*CH0:xtdf', 'image.data', require_all=True)
 
+
+    run_raw = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run, data='raw')
+    sel_raw = run_raw.select('SPB_XTD9_XGM/XGM/DOOCS', require_all=True)
+
+
     run_train_ids = sel_proc.train_ids[:]
     n_total_trains = len(run_train_ids)
     if args.n_trains ==-1:
@@ -76,19 +79,26 @@ if __name__ == '__main__':
     worker_train_ids = np.array_split(run_train_ids, mpi_size)[mpi_rank]
     print(f'Worker {mpi_rank}: First/Last train id is {worker_train_ids[0]}, {worker_train_ids[-1]}, with {len(worker_train_ids)} trains.')
     worker_sel_proc = sel_proc.select_trains(extra_data.by_id[worker_train_ids])
+    worker_sel_raw = sel_raw.select_trains(extra_data.by_id[worker_train_ids])
 
     worker_sum_im = np.zeros(cnst.DET_SHAPE)
     worker_sumsq_im = np.zeros(cnst.DET_SHAPE)
     worker_train_inten = np.zeros( (worker_train_ids.size, 202) )
+
+    worker_xgm = np.zeros( worker_train_ids.size )
 
 
 
 
 
     t_loop0 = time.perf_counter()
-    for i_train, (train_id, train_data) in enumerate(worker_sel_proc.trains()):
+    for i_train, (train_id, train_data_proc) in enumerate(worker_sel_proc.trains()):
 
-        stack = extra_data.stack_detector_data(train_data, 'image.data') #pulses, modules, fast scan, slow scan 
+        _, train_data_raw = worker_sel_raw.train_from_id(train_id)
+        xgm_val = train_data_raw['SPB_XTD9_XGM/XGM/DOOCS']['pulseEnergy.photonFlux.value']
+        worker_xgm[i_train] = xgm_val
+
+        stack = extra_data.stack_detector_data(train_data_proc, 'image.data') #pulses, modules, fast scan, slow scan 
 
         stack[:, mask>0] = np.nan
 
@@ -131,6 +141,7 @@ if __name__ == '__main__':
 
 
     run_train_inten_gathered = mpi_comm.gather(worker_train_inten, root=0)
+    run_xgm_gathered = mpi_comm.gather(worker_xgm, root=0)
 
 
 
@@ -145,6 +156,7 @@ if __name__ == '__main__':
         # run_train_inten = [inten for worker in run_train_inten_gathered for inten in worker]
 
         run_train_inten = np.concatenate(run_train_inten_gathered, axis=0)
+        run_xgm = np.concatenate(run_xgm_gathered, axis=0)
 
         run_mean_im = run_sum_im/np.sum(args.n_trains*n_pulses)
         run_vari_im = run_sumsq_im/np.sum(args.n_trains*n_pulses)
@@ -160,6 +172,7 @@ if __name__ == '__main__':
             h5out['/vari_im'] = run_vari_im
 
             h5out['/train_ids'] = run_train_ids
+            h5out['/xgm'] = run_xgm
             h5out['/train_inten'] = run_train_inten[:,:n_pulses]
 
             h5out['/n_pulses'] = n_pulses
