@@ -7,6 +7,11 @@ EXP_DIR = '/gpfs/exfel/exp/SPB/202501/p007596'
 
 GEOM_DIR = f'{EXP_DIR}/usr/Shared/geom'
 GEOM_PATH = f'{GEOM_DIR}/agipd_p7821_r0005_v05.geom'
+GEOM_CLEN = 0.126
+GEOM_EV = 9345
+
+
+
 
 MASK_DIR = f'{EXP_DIR}/usr/Shared/mask'
 MASK_PATH = f'{MASK_DIR}/mask.h5'

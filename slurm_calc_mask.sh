@@ -14,7 +14,7 @@ echo $(date)
 
 echo "$@"
 
-mpirun -n 32 -- python calc_train_inten.py $@
+mpirun -n 32 -- python calc_mask.py $@
 
 echo $(date)
 
