@@ -240,11 +240,11 @@ if __name__ == '__main__':
         with h5py.File(args.h5fname, 'w') as h5out:
             h5out['/calc_time'] = round(t1/60,2)
             
-            h5out['/mean_im'] =run_mean_im
-            h5out['/mask'] = mask
-            h5out['/sum_im'] = run_sum_im
-            h5out['/sum_sq_im'] = run_sum_sq_im
-            h5out['/vari_im'] = run_vari_im
+            # h5out['/mean_im'] =run_mean_im
+            # h5out['/mask'] = mask
+            # h5out['/sum_im'] = run_sum_im
+            # h5out['/sum_sq_im'] = run_sum_sq_im
+            # h5out['/vari_im'] = run_vari_im
 
             h5out['/train_ids'] = run_train_ids
             h5out['/xgm'] = run_xgm
@@ -256,6 +256,15 @@ if __name__ == '__main__':
 
 
             h5out['/high_i_thresh'] = args.high_i_thresh
+
+
+            h5out['/all/sum_im'] = run_sum_im
+            h5out['/all/sum_sq_im'] = run_sum_sq_im
+            h5out['/all/mean_im'] = run_mean_im
+            h5out['/all/vari_im'] = run_vari_im
+
+
+
             h5out['/low_i/sum_im'] = run_low_i_sum_im
             h5out['/low_i/sum_sq_im'] = run_low_i_sum_sq_im
             h5out['/low_i/mean_im'] = run_low_i_mean_im
