@@ -94,10 +94,8 @@ if __name__ == '__main__':
 
     worker_pulse_inten = np.zeros( (worker_train_ids.size, 202) )
 
-
     worker_powders = []
     worker_powder_coords = []
-    worker_region_ratios = []
 
     worker_n_conden = 0
 
@@ -132,22 +130,11 @@ if __name__ == '__main__':
                     radial_range = (args.qmin, args.qmax)
                     )
 
-            #scale for ratio finding purposes
-            I_sc = I - np.min(I)
+            
+            worker_powders.append(I)
+            worker_powder_coords.append( [train_id, i_pulse] )
 
 
-            if i_train==0:
-                qreg1 = np.where(np.logical_and(qint>args.qreg1[0], qint<args.qreg1[1]))
-                qreg2 = np.where(np.logical_and(qint>args.qreg2[0], qint<args.qreg2[1]))
-
-            ratio = np.mean(I_sc[qreg1])/np.mean(I_sc[qreg2])
-
-            if ratio>args.ratio_thresh:
-                worker_powders.append(I)
-                worker_powder_coords.append( (train_id, i_pulse) )
-                worker_region_ratios.append( ratio )
-
-                worker_n_conden +=1
 
 
         if mpi_rank==0 and i_train%10==0:
@@ -161,8 +148,6 @@ if __name__ == '__main__':
     if mpi_rank ==0:
         run_powders = []
         run_powder_coords = []
-        run_powder_ratios = []
-        run_n_conden = 0
     else:
         run_powders = None
 
@@ -171,8 +156,6 @@ if __name__ == '__main__':
 
     run_powders_gathered = mpi_comm.gather(worker_powders, root=0)
     run_powder_coords_gathered = mpi_comm.gather(worker_powder_coords, root=0)
-    run_region_ratios_gathered = mpi_comm.gather(worker_region_ratios, root=0)
-    run_n_conden = mpi_comm.reduce(worker_n_conden, root=0)
 
 
 
@@ -180,14 +163,12 @@ if __name__ == '__main__':
     if mpi_rank==0:
 
 
-        run_powders_gathered[:] = [worker for worker in run_powders_gathered if worker] #remove empty workers before concatenation
+        # run_powders_gathered[:] = [worker for worker in run_powders_gathered if worker] #remove empty workers before concatenation
         run_powders = np.concatenate(run_powders_gathered, axis=0)
 
-        run_powder_coords_gathered[:] = [worker for worker in run_powder_coords_gathered if worker] #remove empty workers before concatenation
+        # run_powder_coords_gathered[:] = [worker for worker in run_powder_coords_gathered if worker] #remove empty workers before concatenation
         run_powder_coords = np.concatenate(run_powder_coords_gathered, axis=0)
 
-        run_region_ratios_gathered[:] = [worker for worker in run_region_ratios_gathered if worker] #remove empty workers before concatenation
-        run_region_ratios = np.concatenate(run_region_ratios_gathered, axis=0)
 
 
 
@@ -210,15 +191,10 @@ if __name__ == '__main__':
 
 
             h5out['/powders'] = run_powders
-            h5out['/n_conden'] = run_n_conden
 
-            h5out['/qreg1'] = args.qreg1
-            h5out['/qreg2'] = args.qreg2
 
             h5out['/qmin'] = args.qmin
             h5out['/qmax'] = args.qmax
-            h5out['/ratio_thresh'] = args.ratio_thresh
-            h5out['/region_ratios'] = run_region_ratios
             h5out['/powder_coords'] = run_powder_coords
 
 

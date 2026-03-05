@@ -14,7 +14,7 @@ echo $(date)
 
 echo "$@"
 
-mpirun -n 32 -- python calc_powder.py $@
+mpirun -n 4 -- python calc_powder.py $@
 
 echo $(date)
 
