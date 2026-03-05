@@ -32,7 +32,7 @@ if __name__ == '__main__':
         print('calc_powder.py')
         print(f'Running MPI with {mpi_size} rank(s).')
 
-    parser = argparse.ArgumentParser("Calculate sum and mean of run.")
+    parser = argparse.ArgumentParser("Calculate the powder pattern for every pulse.")
 
     parser.add_argument("run", type=int, help='Run number.')
     parser.add_argument("--nq", type=int, default=256, help='Number of q bins.')
@@ -40,10 +40,14 @@ if __name__ == '__main__':
     parser.add_argument("--n-trains", type=int, default=-1, help='Number of trains to analyse.')
     parser.add_argument("--h5mask", default=None, help='Name of the mask h5 file.')
     parser.add_argument("--geomfname", default=None, help='Name of the geom file.')
-    parser.add_argument("--qmin", default=0, help='')
-    parser.add_argument("--qmax", default=1.75, help='')
+    parser.add_argument("--qmin", default=2.17, type=float, help='')
+    parser.add_argument("--qmax", default=35, type=float, help='')
 
-    parser.add_argument("--high-i-thresh", type=float, default=0, help='')
+    # parser.add_argument("--qreg1", type=float, nargs=2, default=[2, 4], help='')
+    # parser.add_argument("--qreg2", type=float, nargs=2, default=[6.5, 8.5], help='')
+    # parser.add_argument("--ratio-thresh", default=10, type=float,  help='')
+
+
 
     args = parser.parse_args()
 
@@ -59,7 +63,6 @@ if __name__ == '__main__':
 
 
 
-
     if os.path.exists(args.h5mask):
         with h5py.File(args.h5mask, 'r') as f:
             mask = f['/mask'][...]
@@ -69,9 +72,6 @@ if __name__ == '__main__':
         mask = np.ones(cnst.DET_SHAPE)
 
 
-
-    if args.high_i_thresh is None:
-        args.high_i_thresh = 0
 
 
     run_proc = extra_data.open_run(proposal=cnst.PROPOSAL_NUM, run=args.run, data='proc')
@@ -86,7 +86,6 @@ if __name__ == '__main__':
 
     if mpi_rank ==0:
         print(f'Calculating average for run {args.run} with {args.n_trains} trains.')
-        print(f'Intensity threshold: {args.high_i_thresh}')
 
 
     worker_train_ids = np.array_split(run_train_ids, mpi_size)[mpi_rank]
@@ -95,13 +94,12 @@ if __name__ == '__main__':
 
     worker_pulse_inten = np.zeros( (worker_train_ids.size, 202) )
 
-    worker_train_powder = np.zeros( (worker_train_ids.size, args.nq) )
-    worker_high_i_powder = np.zeros(  args.nq)
-    worker_low_i_powder = np.zeros(  args.nq)
 
-    worker_n_high_i_pulses = 0
-    worker_n_low_i_pulses = 0
+    worker_powders = []
+    worker_powder_coords = []
+    worker_region_ratios = []
 
+    worker_n_conden = 0
 
 
     ai = AzimuthalIntegrator(
@@ -109,6 +107,9 @@ if __name__ == '__main__':
             dist = cnst.GEOM_CLEN,
             wavelength = (12.3984/ (cnst.GEOM_EV*1e-3)) *1e-10
             )
+
+
+
 
 
 
@@ -120,52 +121,33 @@ if __name__ == '__main__':
 
         stack[:, mask>1] = np.nan
 
-        stack_sum = np.nansum(stack, axis=0)
 
-        qint, I  = ai.integrate1d(
-                stack_sum.reshape(16*512, 128),
-                npt = args.nq,
-                polarization_factor=None,
-                unit='q_nm^-1',
-                # radial_range = (args.qmin, args.qmax)
-                )
+        for i_pulse, pulse in enumerate(stack):
 
-        worker_train_powder[i_train, :] = I
+            qint, I  = ai.integrate1d(
+                    pulse.reshape(16*512, 128),
+                    npt = args.nq,
+                    polarization_factor=None,
+                    unit='q_nm^-1',
+                    radial_range = (args.qmin, args.qmax)
+                    )
 
-        pulse_inten = np.nanmean(stack, axis=(1,2,3))
-        worker_pulse_inten[i_train, :stack.shape[0]] = pulse_inten
-
-        high_i_pulses = np.where(pulse_inten>=args.high_i_thresh)
-        low_i_pulses = np.where(pulse_inten<args.high_i_thresh)
-        worker_n_high_i_pulses += high_i_pulses[0].size
-        worker_n_low_i_pulses += low_i_pulses[0].size
+            #scale for ratio finding purposes
+            I_sc = I - np.min(I)
 
 
-        high_i_sum = np.nansum(stack[high_i_pulses], axis=0)
-        low_i_sum = np.nansum(stack[low_i_pulses], axis=0)
+            if i_train==0:
+                qreg1 = np.where(np.logical_and(qint>args.qreg1[0], qint<args.qreg1[1]))
+                qreg2 = np.where(np.logical_and(qint>args.qreg2[0], qint<args.qreg2[1]))
 
-        _, high_I = ai.integrate1d(high_i_sum.reshape(16*512, 128),
-                npt = args.nq,
-                polarization_factor=None,
-                unit='q_nm^-1',
-                # radial_range = (args.qmin, args.qmax)
-                )
+            ratio = np.mean(I_sc[qreg1])/np.mean(I_sc[qreg2])
 
-        _, low_I = ai.integrate1d(low_i_sum.reshape(16*512, 128),
-                npt = args.nq,
-                polarization_factor=None,
-                unit='q_nm^-1',
-                # radial_range = (args.qmin, args.qmax)
-                )
+            if ratio>args.ratio_thresh:
+                worker_powders.append(I)
+                worker_powder_coords.append( (train_id, i_pulse) )
+                worker_region_ratios.append( ratio )
 
-        worker_high_i_powder += high_I
-        worker_low_i_powder += low_I
-
-
-
-
-
-
+                worker_n_conden +=1
 
 
         if mpi_rank==0 and i_train%10==0:
@@ -177,61 +159,35 @@ if __name__ == '__main__':
 
 
     if mpi_rank ==0:
-        run_pulse_inten = np.zeros(args.n_trains)
-        run_train_powder = np.zeros((args.n_trains, args.nq))
-        run_high_i_powder = np.zeros( args.nq)
-        run_low_i_powder = np.zeros( args.nq)
+        run_powders = []
+        run_powder_coords = []
+        run_powder_ratios = []
+        run_n_conden = 0
     else:
-        run_pulse_inten = None
-        run_train_powder = None
-        run_high_i_powder =None
-        run_low_i_powder =None
-
-
-    mpi_comm.Reduce(
-            [worker_high_i_powder, MPI.FLOAT],
-            [run_high_i_powder, MPI.FLOAT],
-            op=MPI.SUM,
-            root=0
-            )
-
-    mpi_comm.Reduce(
-            [worker_low_i_powder, MPI.FLOAT],
-            [run_low_i_powder, MPI.FLOAT],
-            op=MPI.SUM,
-            root=0
-            )
-
-
-
-    run_n_low_i_pulses = mpi_comm.reduce(worker_n_low_i_pulses, root=0)
-    run_n_high_i_pulses = mpi_comm.reduce(worker_n_high_i_pulses, root=0)
-
-    run_pulse_inten_gathered = mpi_comm.gather(worker_pulse_inten, root=0)
-    run_train_powder_gathered = mpi_comm.gather(worker_train_powder, root=0)
+        run_powders = None
 
 
 
 
+    run_powders_gathered = mpi_comm.gather(worker_powders, root=0)
+    run_powder_coords_gathered = mpi_comm.gather(worker_powder_coords, root=0)
+    run_region_ratios_gathered = mpi_comm.gather(worker_region_ratios, root=0)
+    run_n_conden = mpi_comm.reduce(worker_n_conden, root=0)
 
 
 
 
     if mpi_rank==0:
 
-        run_pulse_inten = np.concatenate(run_pulse_inten_gathered, axis=0)
-        run_train_powder = np.concatenate(run_train_powder_gathered, axis=0)
 
-        run_train_powder *= 1/(args.n_trains*n_pulses_per_train)
+        run_powders_gathered[:] = [worker for worker in run_powders_gathered if worker] #remove empty workers before concatenation
+        run_powders = np.concatenate(run_powders_gathered, axis=0)
 
+        run_powder_coords_gathered[:] = [worker for worker in run_powder_coords_gathered if worker] #remove empty workers before concatenation
+        run_powder_coords = np.concatenate(run_powder_coords_gathered, axis=0)
 
-        if run_n_high_i_pulses >0:
-            run_high_i_powder *= 1/(run_n_high_i_pulses)
-
-        if run_n_low_i_pulses >0:
-            run_low_i_powder *= 1/(run_n_low_i_pulses)
-
-
+        run_region_ratios_gathered[:] = [worker for worker in run_region_ratios_gathered if worker] #remove empty workers before concatenation
+        run_region_ratios = np.concatenate(run_region_ratios_gathered, axis=0)
 
 
 
@@ -244,7 +200,6 @@ if __name__ == '__main__':
             h5out['/mask'] = mask
 
             h5out['/train_ids'] = run_train_ids
-            h5out['/pulse_inten'] = run_pulse_inten[:,:n_pulses_per_train]
 
             h5out['/n_pulses_per_train'] = n_pulses_per_train
             h5out['/n_trains'] = args.n_trains
@@ -253,17 +208,20 @@ if __name__ == '__main__':
             h5out['/nq'] = args.nq
             h5out['/qint'] = qint
 
+
+            h5out['/powders'] = run_powders
+            h5out['/n_conden'] = run_n_conden
+
+            h5out['/qreg1'] = args.qreg1
+            h5out['/qreg2'] = args.qreg2
+
             h5out['/qmin'] = args.qmin
             h5out['/qmax'] = args.qmax
+            h5out['/ratio_thresh'] = args.ratio_thresh
+            h5out['/region_ratios'] = run_region_ratios
+            h5out['/powder_coords'] = run_powder_coords
 
 
-            h5out['/train_powder'] = run_train_powder
-            h5out['/high_i_thresh'] = args.high_i_thresh
-            h5out['/high_i_powder'] = run_high_i_powder
-            h5out['/low_i_powder'] = run_low_i_powder
-
-            h5out['/n_high_i_pulses'] = run_n_high_i_pulses
-            h5out['/n_low_i_pulses'] = run_n_low_i_pulses
 
 
 
